@@ -1,4 +1,4 @@
-# Avalanche
+# Salazar
 
 ## How to use:
 When run, your web browser will open up with a link input ready for usage. 
