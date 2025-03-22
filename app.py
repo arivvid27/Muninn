@@ -306,7 +306,6 @@ def results():
         severity_counts=severity_counts
     )
 
-
 @app.template_filter('truncate_url')
 def truncate_url(url, length=50):
     if len(url) <= length:
