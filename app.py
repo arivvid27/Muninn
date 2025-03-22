@@ -179,6 +179,10 @@ class VulnerabilityScanner:
             scripts = soup.find_all('script')
             dangerous_sinks = [
                 (r'document\.write\s*\(\s*.*?(document\.URL|location\.hash|location\.search)', "document.write sink"),
+                (r'innerHTML\s*=\s*.*?(location|document\.URL|document\.location)', "innerHTML sink"),
+                (r'eval\s*\(\s*.*?(location|document\.URL|document\.location)', "eval sink"),
+                (r'setTimeout\s*\(\s*.*?(location|document\.URL)', "setTimeout sink"),
+                (r'setInterval\s*\(\s*.*?(location|document\.URL)', "setInterval sink")
             ]
             
             for script in scripts:
@@ -577,6 +581,46 @@ class VulnerabilityScanner:
                         "details": "SameSite=Lax may not fully protect against CSRF in POST-heavy apps."
                     })
 
+    def _has_post_forms(self, url):
+        """Helper to check if URL has POST forms"""
+        try:
+            response = self.session.get(url, headers=self.headers, timeout=5)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            return bool(soup.find_all('form', method=lambda x: x and x.lower() == 'post'))
+        except Exception:
+            return False
+
+    def _directory_enumeration(self, url):
+        """Perform directory busting and report found URLs as info"""
+        common_dirs = [
+            'admin', 'login', 'dashboard', 'wp-admin', 'phpmyadmin', 'config', 
+            'backup', 'test', 'dev', 'api', 'uploads', 'files', 'images'
+        ]
+        
+        base_url = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+        found_urls = []
+        
+        for dir_name in common_dirs:
+            test_url = f"{base_url}/{dir_name}/"
+            try:
+                response = self.session.get(test_url, headers=self.headers, timeout=3, allow_redirects=False)
+                status = response.status_code
+                
+                if status == 200:
+                    if len(response.text) > 100 and 'not found' not in response.text.lower():
+                        found_urls.append(test_url)
+                        self.vulnerabilities.append({
+                            "type": "Directory Enumeration",
+                            "description": f"Accessible directory found: {test_url}",
+                            "severity": "info",
+                            "location": test_url,
+                            "details": "This directory is publicly accessible."
+                        })
+                        
+            except Exception as e:
+                logger.error(f"Error enumerating {test_url}: {str(e)}")
+        
+        return found_urls
 
     def _deduplicate_vulnerabilities(self):
         """Remove duplicate vulnerability reports"""
