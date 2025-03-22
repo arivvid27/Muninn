@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSnaker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i>
+                <h1>WebSnaker</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    {% if session.get('scan_results') %}
+                    <li><a href="{{ url_for('results') }}">Latest Results</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 WebSnaker Security Scanner | Educational Tool for Web Vulnerability Detection</p>
+            <br>
+            <br>
+            <b><p>!! DISCLAIMER !!</p></b>
+            <p> Please note that these results are for educational purposes only. These results can be highly inaccurate
+                and should not be used as a professional vulnerability scanner, as it can give false alarms.</p>
+        </div>
+        <br>
+        <br>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

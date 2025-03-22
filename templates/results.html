@@ -1,0 +1,299 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="results-header">
+    <h2>Scan Report</h2>
+    <div class="scan-info">
+        <p><strong>Target:</strong> <a href="{{ target_url }}" target="_blank" rel="noopener noreferrer">{{ target_url|truncate_url }}</a></p>
+        <p><strong>Scan Date:</strong> {{ scan_date }}</p>
+    </div>
+</div>
+
+<div class="results-summary">
+    <div class="summary-card risk-overview">
+        <h3>Potential Risk Overview</h3>
+        <div class="risk-meter">
+            {% set total_vulns = severity_counts.high + severity_counts.medium + severity_counts.low %}
+            {% if severity_counts.high > 0 %}
+                <div class="risk-level high">High Risk</div>
+            {% elif severity_counts.medium > 0 %}
+                <div class="risk-level medium">Medium Risk</div>
+            {% elif severity_counts.low > 0 %}
+                <div class="risk-level low">Low Risk</div>
+            {% else %}
+                <div class="risk-level safe">Safe</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="summary-card counts">
+        <h3>Potential Vulnerabilities Found</h3>
+        <div class="severity-counts">
+            <div class="severity-item high">
+                <div class="severity-icon"><i class="fas fa-skull-crossbones"></i></div>
+                <div class="severity-info">
+                    <span class="severity-label">High</span>
+                    <span class="severity-count">{{ severity_counts.high }}</span>
+                </div>
+            </div>
+            <div class="severity-item medium">
+                <div class="severity-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="severity-info">
+                    <span class="severity-label">Medium</span>
+                    <span class="severity-count">{{ severity_counts.medium }}</span>
+                </div>
+            </div>
+            <div class="severity-item low">
+                <div class="severity-icon"><i class="fas fa-info-circle"></i></div>
+                <div class="severity-info">
+                    <span class="severity-label">Low</span>
+                    <span class="severity-count">{{ severity_counts.low }}</span>
+                </div>
+            </div>
+            <div class="severity-item info">
+                <div class="severity-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="severity-info">
+                    <span class="severity-label">Info</span>
+                    <span class="severity-count">{{ severity_counts.info }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="vulnerability-list">
+    <h3>Detailed Findings</h3>
+
+    {% if results %}
+        <div class="accordion">
+            {% for vuln in results %}
+                <div class="vuln-item {{ vuln.severity }}" data-severity="{{ vuln.severity }}">
+                    <div class="vuln-header">
+                        <div class="vuln-icon">
+                            {% if vuln.severity == 'high' %}
+                                <i class="fas fa-skull-crossbones"></i>
+                            {% elif vuln.severity == 'medium' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% elif vuln.severity == 'low' %}
+                                <i class="fas fa-info-circle"></i>
+                            {% else %}
+                                <i class="fas fa-check-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="vuln-title">
+                            <h4>{{ vuln.type }}</h4>
+                            <p>{{ vuln.description }}</p>
+                        </div>
+                        <div class="vuln-severity {{ vuln.severity }}">
+                            {{ vuln.severity|upper }}
+                        </div>
+                        <div class="expand-icon">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    <div class="vuln-content">
+                        <div class="vuln-details">
+                            <p><strong>Details:</strong> {{ vuln.details }}</p>
+                            <p><strong>Location:</strong> {{ vuln.location|truncate_url }}</p>
+                        </div>
+
+                        <div class="vuln-education">
+                            <h5>What does this mean?</h5>
+                            {% if vuln.type == 'XSS Vulnerability' or vuln.type == 'Potential XSS' %}
+                                <p>Cross-Site Scripting (XSS) allows attackers to inject malicious scripts into web pages viewed by users. These scripts can steal cookies, session tokens, or other sensitive information. They can also rewrite the content of the HTML page or redirect users to malicious sites.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Validate and sanitize all user inputs</li>
+                                    <li>Implement Content Security Policy (CSP) headers</li>
+                                    <li>Use framework-provided encoding functions</li>
+                                    <li>Consider using the HttpOnly flag for sensitive cookies</li>
+                                </ul>
+
+                            {% elif vuln.type == 'CSRF Vulnerability' %}
+                                <p>Cross-Site Request Forgery (CSRF) forces authenticated users to execute unwanted actions on a web application in which they're currently authenticated. Attackers can trick users into performing actions they didn't intend, such as transferring funds, changing email addresses, or other sensitive operations.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Implement anti-CSRF tokens in all forms</li>
+                                    <li>Use the SameSite cookie attribute</li>
+                                    <li>Verify the Origin and Referer headers</li>
+                                    <li>Require re-authentication for sensitive actions</li>
+                                </ul>
+
+                            {% elif vuln.type == 'Insecure Connection' %}
+                                <p>Unencrypted HTTP connections expose all data transmitted between the user and the server. This can include passwords, personal information, and other sensitive data. Anyone with access to the network traffic can intercept and read this information.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Implement HTTPS across the entire site</li>
+                                    <li>Obtain an SSL/TLS certificate from a trusted authority</li>
+                                    <li>Configure proper HSTS headers</li>
+                                    <li>Redirect all HTTP traffic to HTTPS</li>
+                                </ul>
+
+                            {% elif 'SQL Injection' in vuln.type %}
+                                <p>SQL Injection allows attackers to inject malicious SQL code into database queries. This can result in unauthorized access to sensitive data, data modification, or even complete system compromise. It's one of the most dangerous web vulnerabilities.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Use parameterized queries or prepared statements</li>
+                                    <li>Implement proper input validation</li>
+                                    <li>Apply the principle of least privilege to database accounts</li>
+                                    <li>Consider using an ORM (Object-Relational Mapping) framework</li>
+                                </ul>
+
+                            {% elif 'Security Header' in vuln.type %}
+                                <p>Security headers provide an additional layer of protection against various attacks. Missing headers can leave your site vulnerable to clickjacking, XSS, and other common web attacks.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Implement all recommended security headers</li>
+                                    <li>Use a security header analyzer to verify implementation</li>
+                                    <li>Update your web server configuration to include these headers</li>
+                                </ul>
+
+                            {% elif 'Information Disclosure' in vuln.type %}
+                                <p>Revealing unnecessary information about your web infrastructure, software versions, or internal details helps attackers target specific vulnerabilities. This information can be used in the reconnaissance phase of an attack.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Configure servers to hide version information</li>
+                                    <li>Remove developer comments from production code</li>
+                                    <li>Implement custom error pages</li>
+                                    <li>Apply the principle of least information</li>
+                                </ul>
+
+                            {% elif 'Open Redirect' in vuln.type %}
+                                <p>Open redirect vulnerabilities allow attackers to redirect users to malicious websites, often used in phishing attacks. Users may trust the redirects because they originate from a trusted domain.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Use a whitelist of allowed redirect destinations</li>
+                                    <li>Avoid using user-supplied input for redirects</li>
+                                    <li>Implement indirect reference maps for redirects</li>
+                                </ul>
+
+                            {% elif 'Insecure Cookie' in vuln.type %}
+                                <p>Cookies without proper security attributes can be stolen or manipulated. This can lead to session hijacking and other authentication-related attacks.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Add the Secure flag to all cookies</li>
+                                    <li>Add the HttpOnly flag to prevent JavaScript access</li>
+                                    <li>Use the SameSite attribute to prevent CSRF</li>
+                                    <li>Set appropriate expiration times</li>
+                                </ul>
+
+                            {% elif 'Dangerous JavaScript' in vuln.type %}
+                                <p>Certain JavaScript functions like eval(), document.write(), and innerHTML can be dangerous when processing untrusted data. They can lead to XSS vulnerabilities if misused.</p>
+                                <h5>How to fix:</h5>
+                                <ul>
+                                    <li>Avoid using eval() and document.write()</li>
+                                    <li>Use safer alternatives like textContent instead of innerHTML</li>
+                                    <li>Implement proper input validation before processing</li>
+                                    <li>Consider a Content Security Policy that restricts inline scripts</li>
+                                </ul>
+
+                            {% elif 'Scanner Error' in vuln.type or 'Connection Issue' in vuln.type %}
+                                <p>The scanner encountered a problem while analyzing the website. This could be due to network issues, website restrictions, or configurations that prevent proper analysis.</p>
+                                <h5>Recommended actions:</h5>
+                                <ul>
+                                    <li>Check your network connection</li>
+                                    <li>Verify the URL is correct and accessible</li>
+                                    <li>Try scanning again later</li>
+                                    <li>Consider manual testing or professional security assessment</li>
+                                </ul>
+
+                            {% elif 'Security Assessment' in vuln.type %}
+                                <p>No obvious vulnerabilities were detected during the scan. However, this doesn't guarantee the site is completely secure. Web security is complex and requires ongoing attention.</p>
+                                <h5>Recommended actions:</h5>
+                                <ul>
+                                    <li>Implement security by design in all development</li>
+                                    <li>Perform regular security assessments</li>
+                                    <li>Stay updated on new security threats and best practices</li>
+                                    <li>Consider additional testing methods for more thorough analysis</li>
+                                </ul>
+
+                            {% else %}
+                                <p>This issue could potentially impact the security of the website. Security vulnerabilities often require context-specific remediation.</p>
+                                <h5>General recommendations:</h5>
+                                <ul>
+                                    <li>Research this specific vulnerability type further</li>
+                                    <li>Follow industry best practices for web security</li>
+                                    <li>Consider consulting with a security professional</li>
+                                    <li>Implement defense-in-depth security measures</li>
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-results">No vulnerabilities found. This doesn't guarantee complete security.</p>
+    {% endif %}
+</div>
+
+<div class="action-buttons">
+    <a href="{{ url_for('index') }}" class="btn secondary-btn">New Scan</a>
+    <button id="print-report" class="btn primary-btn">Print Report</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vulnerabilityItems = document.querySelectorAll('.vuln-item');
+
+    vulnerabilityItems.forEach(item => {
+        const header = item.querySelector('.vuln-header');
+        const content = item.querySelector('.vuln-content');
+        const expandIcon = item.querySelector('.expand-icon i');
+
+        header.addEventListener('click', () => {
+            item.classList.toggle('active');
+
+            if (expandIcon.classList.contains('fa-chevron-down')) {
+                expandIcon.classList.remove('fa-chevron-down');
+                expandIcon.classList.add('fa-chevron-up');
+            } else {
+                expandIcon.classList.remove('fa-chevron-up');
+                expandIcon.classList.add('fa-chevron-down');
+            }
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        });
+
+        item.addEventListener('mouseenter', () => {
+            const severity = item.getAttribute('data-severity');
+            item.style.backgroundColor = getHoverColor(severity);
+        });
+
+        item.addEventListener('mouseleave', () => {
+            if (!item.classList.contains('active')) {
+                item.style.backgroundColor = '';
+            }
+        });
+    });
+
+    function getHoverColor(severity) {
+        switch(severity) {
+            case 'high':
+                return 'rgba(220, 53, 69, 0.1)';
+            case 'medium':
+                return 'rgba(255, 193, 7, 0.1)';
+            case 'low':
+                return 'rgba(25, 135, 84, 0.1)';
+            case 'info':
+                return 'rgba(13, 110, 253, 0.1)';
+            default:
+                return '';
+        }
+    }
+
+    const printButton = document.getElementById('print-report');
+    if (printButton) {
+        printButton.addEventListener('click', () => {
+            window.print();
+        });
+    }
+});
+</script>
+{% endblock %}

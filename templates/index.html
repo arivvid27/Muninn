@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h2>Detect Web Vulnerabilities</h2>
+        <p>Scan websites for common security risks and learn how to protect yourself online</p>
+    </div>
+</div>
+
+<section class="scanner-section">
+    <div class="card">
+        <h3>Start a New Scan</h3>
+        <p>Enter a website URL to analyze for security vulnerabilities</p>
+        
+        <form id="scan-form" action="{{ url_for('scan') }}" method="post">
+            <div class="form-group">
+                <input type="text" name="url" id="url" placeholder="Enter website URL (e.g., example.com)" required>
+                <button type="submit" class="btn primary-btn">Scan Now</button>
+            </div>
+            {% if error %}
+            <div class="error-message">
+                {{ error }}
+            </div>
+            {% endif %}
+        </form>
+        
+        <div id="loading" class="loading-container" style="display: none;">
+            <div class="scanning-animation">
+                <div class="pulse"></div>
+                <div class="scan-line"></div>
+            </div>
+            <div class="scanning-text">
+                <p>Scanning for vulnerabilities...</p>
+                <div class="scan-status">
+                    <div class="status-item">
+                        <i class="fas fa-search"></i>
+                        <span>Analyzing page structure</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-code"></i>
+                        <span>Checking for XSS vulnerabilities</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-lock"></i>
+                        <span>Testing security headers</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-database"></i>
+                        <span>Checking for injection points</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="info-section">
+    <div class="info-cards">
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-virus"></i>
+            </div>
+            <h4>XSS Detection</h4>
+            <p>Identify Cross-Site Scripting vulnerabilities that could allow attackers to inject malicious code.</p>
+        </div>
+        <div class="info-card">
+            <i class="fas fa-user-secret"></i>
+            <h4>CSRF Analysis</h4>
+            <p>Detect forms lacking Cross-Site Request Forgery protection that could lead to unauthorized actions.</p>
+        </div>
+        <div class="info-card">
+            <i class="fas fa-lock-open"></i>
+            <h4>SSL Verification</h4>
+            <p>Check for secure HTTPS connections and proper implementation of transport security.</p>
+        </div>
+        <div class="info-card">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h4>Security Headers</h4>
+            <p>Verify the presence of critical security headers that protect against common attacks.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scanForm = document.getElementById('scan-form');
+    const loadingElement = document.getElementById('loading');
+    
+    if (scanForm) {
+        scanForm.addEventListener('submit', function() {
+            scanForm.style.display = 'none';
+
+            loadingElement.style.display = 'flex';
+
+            const statusItems = document.querySelectorAll('.status-item');
+            let delay = 500;
+            
+            statusItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.classList.add('active');
+                }, delay * (index + 1));
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
